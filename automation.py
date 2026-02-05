@@ -13,7 +13,7 @@ class AutomationUI:
         self.loop_count = 0
         self.window = tk.Tk()
         self.window.title("Auto")
-        self.window.geometry("250x250")
+        self.window.geometry("250x220")
         self.window.resizable(False, False)
         
         # Always on top
@@ -22,29 +22,29 @@ class AutomationUI:
         
         # Status
         self.status_label = tk.Label(self.window, text="Status: Stopped", font=("Arial", 10), fg="red")
-        self.status_label.pack(pady=10)
+        self.status_label.pack(pady=0)
         
         # Loop counter
-        self.counter_label = tk.Label(self.window, text="Loops: 0 / 9", font=("Arial", 9), fg="blue")
-        self.counter_label.pack(pady=2)
+        self.counter_label = tk.Label(self.window, text="Loops: 0 / 9", font=("Arial", 10), fg="blue")
+        self.counter_label.pack(pady=0)
         
         # Keybind status
-        self.keybind_label = tk.Label(self.window, text="Keybinds: Enabled", font=("Arial", 9), fg="green")
-        self.keybind_label.pack(pady=5)
+        self.keybind_label = tk.Label(self.window, text="Keybinds: Enabled", font=("Arial", 10), fg="green")
+        self.keybind_label.pack(pady=0)
         
         # Shortcut info
-        tk.Label(self.window, text="Press 'O' to Start | 'P' to Stop", font=("Arial", 8), fg="blue").pack(pady=5)
+        tk.Label(self.window, text="Press 'O' to Start | 'P' to Stop", font=("Arial", 10), fg="blue").pack(pady=0)
         
         # Buttons (wider)
         self.start_btn = tk.Button(self.window, text="Start (O)", command=self.start, bg="green", fg="white", width=18)
-        self.start_btn.pack(pady=3)
+        self.start_btn.pack(pady=0)
         
         self.stop_btn = tk.Button(self.window, text="Stop (P)", command=self.stop, bg="red", fg="white", width=18, state="disabled")
-        self.stop_btn.pack(pady=3)
+        self.stop_btn.pack(pady=0)
         
         # Toggle keybind button
         self.toggle_keybind_btn = tk.Button(self.window, text="Disable Keybinds", command=self.toggle_keybinds, bg="orange", fg="white", width=18)
-        self.toggle_keybind_btn.pack(pady=3)
+        self.toggle_keybind_btn.pack(pady=0)
         
         # Setup global hotkeys
         keyboard.add_hotkey('o', self.hotkey_start)
@@ -114,3 +114,4 @@ class AutomationUI:
 
 if __name__ == "__main__":
     AutomationUI()
+    
