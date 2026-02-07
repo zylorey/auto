@@ -13,7 +13,7 @@ class AutomationUI:
         self.loop_count = 0
         self.window = tk.Tk()
         self.window.title("Auto")
-        self.window.geometry("250x220")
+        self.window.geometry("250x250")
         self.window.resizable(False, False)
         
         # Always on top
@@ -35,6 +35,10 @@ class AutomationUI:
         # Shortcut info
         tk.Label(self.window, text="Press 'O' to Start | 'P' to Stop", font=("Arial", 10), fg="blue").pack(pady=0)
         
+        # Copy Command button (new feature)
+        self.copy_btn = tk.Button(self.window, text="Copy Command", command=self.copy_text, bg="purple", fg="white", width=18)
+        self.copy_btn.pack(pady=0)
+        
         # Buttons (wider)
         self.start_btn = tk.Button(self.window, text="Start (O)", command=self.start, bg="green", fg="white", width=18)
         self.start_btn.pack(pady=0)
@@ -51,6 +55,13 @@ class AutomationUI:
         keyboard.add_hotkey('p', self.hotkey_stop)
         
         self.window.mainloop()
+    
+    def copy_text(self):
+        """Copy the command to clipboard"""
+        text = "/ah sell 200k"
+        self.window.clipboard_clear()
+        self.window.clipboard_append(text)
+        self.window.update()
     
     def toggle_keybinds(self):
         self.keybinds_enabled = not self.keybinds_enabled
