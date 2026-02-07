@@ -13,7 +13,7 @@ class AutomationUI:
         self.loop_count = 0
         self.window = tk.Tk()
         self.window.title("Auto")
-        self.window.geometry("250x220")
+        self.window.geometry("250x200")
         self.window.resizable(False, False)
         
         # Always on top
@@ -32,18 +32,15 @@ class AutomationUI:
         self.keybind_label = tk.Label(self.window, text="Keybinds: Enabled", font=("Arial", 10), fg="green")
         self.keybind_label.pack(pady=0)
         
-        # Shortcut info
-        tk.Label(self.window, text="Press 'O' to Start | 'P' to Stop", font=("Arial", 10), fg="blue").pack(pady=0)
-        
         # Buttons (wider)
-        self.start_btn = tk.Button(self.window, text="Start (O)", command=self.start, bg="green", fg="white", width=18)
+        self.start_btn = tk.Button(self.window, text="Start (O)", command=self.start, bg="green", fg="white", width=25)
         self.start_btn.pack(pady=0)
         
-        self.stop_btn = tk.Button(self.window, text="Stop (P)", command=self.stop, bg="red", fg="white", width=18, state="disabled")
+        self.stop_btn = tk.Button(self.window, text="Stop (P)", command=self.stop, bg="red", fg="white", width=25, state="disabled")
         self.stop_btn.pack(pady=0)
         
         # Toggle keybind button
-        self.toggle_keybind_btn = tk.Button(self.window, text="Disable Keybinds", command=self.toggle_keybinds, bg="orange", fg="white", width=18)
+        self.toggle_keybind_btn = tk.Button(self.window, text="Disable Keybinds", command=self.toggle_keybinds, bg="orange", fg="white", width=25)
         self.toggle_keybind_btn.pack(pady=0)
         
         # Setup global hotkeys
@@ -110,30 +107,99 @@ class AutomationUI:
             self.start_btn.config(state="normal")
             self.stop_btn.config(state="disabled")
     
+    def drag_sequence(self, y_coord):
+        """Execute the drag sequence with specified y coordinate"""
+        try:
+            # Press E
+            pyautogui.press('e')
+            time.sleep(0.3)
+            
+            # Hold Shift
+            pyautogui.keyDown('shift')
+            time.sleep(0.2)
+            
+            # Move to start position
+            pyautogui.moveTo(1245, y_coord, duration=0.2)
+            time.sleep(0.1)
+            
+            # Hold left click and drag to end position
+            pyautogui.mouseDown(button='left')
+            time.sleep(0.1)
+            
+            # Drag to end position
+            pyautogui.moveTo(670, y_coord, duration=0.5)
+            time.sleep(0.1)
+            
+            # Release left click
+            pyautogui.mouseUp(button='left')
+            time.sleep(0.1)
+            
+            # Release Shift
+            pyautogui.keyUp('shift')
+            time.sleep(0.3)
+            
+            # Press ESC
+            pyautogui.press('esc')
+            time.sleep(0.2)
+        except Exception as e:
+            # Make sure shift is released on error
+            try:
+                pyautogui.keyUp('shift')
+            except:
+                pass
+    
     def run_automation(self):
         # Auto-copy command ONCE before starting all loops
         self.copy_text()
         
-        while self.running and self.loop_count < 9:
-            self.counter_label.config(text=f"Loops: {self.loop_count} / 9")
-            
-            pyautogui.press('t')
-            
-            pyautogui.hotkey('ctrl', 'v')
-            
-            pyautogui.press('enter')
-            
-            # Instant click with no movement delay
-            pyautogui.click(1101, 364, duration=0.3)
-            
-            # Scroll
-            self.mouse.scroll(0, 1)
-            
-            self.loop_count += 1
+        # Y coordinates for each set of 9 loops
+        y_coordinates = [700, 650, 550]
+        set_count = 0  # Track which set we're on (0, 1, 2)
         
-        # Auto-stop after 9 loops
-        if self.loop_count >= 9:
-            self.counter_label.config(text="Loops: 9 / 9 - Complete!", fg="green")
+        while self.running and set_count < 3:
+            # Execute drag sequence before each set of 9 loops
+            y_coord = y_coordinates[set_count]
+            self.status_label.config(text=f"Status: Drag (y={y_coord})", fg="orange")
+            self.drag_sequence(y_coord)
+            
+            if not self.running:
+                break
+            
+            # Longer delay after drag sequence before starting loops
+            self.status_label.config(text="Status: Waiting...", fg="purple")
+            time.sleep(1.0)  # 1 second delay
+            
+            if not self.running:
+                break
+            
+            # Reset loop count for this set
+            self.loop_count = 0
+            self.status_label.config(text="Status: Running", fg="green")
+            
+            # Run 9 loops
+            while self.running and self.loop_count < 9:
+                pyautogui.press('t')
+                
+                pyautogui.hotkey('ctrl', 'v')
+                
+                pyautogui.press('enter')
+                
+                # Instant click with no movement delay
+                pyautogui.click(1101, 364, duration=0.3)
+                
+                # Scroll
+                self.mouse.scroll(0, 1)
+                
+                self.loop_count += 1
+                
+                # Update counter after loop completes
+                self.counter_label.config(text=f"Set {set_count + 1}/3 - Loops: {self.loop_count} / 9")
+            
+            set_count += 1
+        
+        # Auto-stop after all sets complete
+        if set_count >= 3:
+            self.counter_label.config(text="All Sets Complete! (3/3)", fg="green")
             self.stop()
 
 if __name__ == "__main__":
