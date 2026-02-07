@@ -13,7 +13,7 @@ class AutomationUI:
         self.loop_count = 0
         self.window = tk.Tk()
         self.window.title("Auto")
-        self.window.geometry("250x250")
+        self.window.geometry("250x220")
         self.window.resizable(False, False)
         
         # Always on top
@@ -34,10 +34,6 @@ class AutomationUI:
         
         # Shortcut info
         tk.Label(self.window, text="Press 'O' to Start | 'P' to Stop", font=("Arial", 10), fg="blue").pack(pady=0)
-        
-        # Copy Command button (new feature)
-        self.copy_btn = tk.Button(self.window, text="Copy Command", command=self.copy_text, bg="purple", fg="white", width=18)
-        self.copy_btn.pack(pady=0)
         
         # Buttons (wider)
         self.start_btn = tk.Button(self.window, text="Start (O)", command=self.start, bg="green", fg="white", width=18)
@@ -62,6 +58,20 @@ class AutomationUI:
         self.window.clipboard_clear()
         self.window.clipboard_append(text)
         self.window.update()
+        
+        # Get current status and remove any existing "| ✓ Copied" indicator
+        current_status = self.status_label.cget("text")
+        current_color = self.status_label.cget("fg")
+        
+        # Remove existing copied indicator if present
+        if "| ✓ Copied" in current_status:
+            current_status = current_status.replace(" | ✓ Copied", "")
+        
+        # Show "Command Copied" next to status
+        self.status_label.config(text=f"{current_status} | ✓ Copied")
+        
+        # Remove the copied indicator after 2 seconds
+        self.window.after(1000, lambda: self.status_label.config(text=current_status, fg=current_color))
     
     def toggle_keybinds(self):
         self.keybinds_enabled = not self.keybinds_enabled
@@ -101,6 +111,9 @@ class AutomationUI:
             self.stop_btn.config(state="disabled")
     
     def run_automation(self):
+        # Auto-copy command ONCE before starting all loops
+        self.copy_text()
+        
         while self.running and self.loop_count < 9:
             self.counter_label.config(text=f"Loops: {self.loop_count} / 9")
             
@@ -125,4 +138,3 @@ class AutomationUI:
 
 if __name__ == "__main__":
     AutomationUI()
-    
