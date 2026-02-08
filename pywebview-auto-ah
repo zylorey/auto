@@ -587,7 +587,7 @@ if __name__ == '__main__':
         js_api=api, 
         width=425, 
         height=325,
-        resizable=True,
+        resizable=False,
         on_top=True
     )
     backend.set_window(window)
