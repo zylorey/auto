@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-deep: #05070a;
+            --accent-royal: #2962ff;
+            --accent-neon: #00d4ff;
+            --accent-green: #55FF00;
+            --accent-stop: #ff2957;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #8b9bb4;
+            --primary-color: #0023e4;
+            --secondary-color: #0066ff;
+            --accent-color: #0047b3;
+            --gap: 20px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        
+        /* Fixed dimensions based on your create_window settings */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(41, 98, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 212, 255, 0.1) 0%, transparent 40%);
+            height: 278px;
+            width: 408px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--text-main);
+            padding: var(--gap);
+        }
+        .app-container {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            background: linear-gradient(
+                145deg,
+                #1a1a2e 0%,
+                #16213e 25%,
+                #0f3460 50%,
+                #0023e4 75%,
+                #0047b3 100%
+            );
+            border-radius: 20px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.6),
+                0 15px 30px rgba(0, 35, 228, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 35, 228, 0.4);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .app-container::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border-radius: 18px;
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.05) 0%,
+                transparent 50%,
+                rgba(0, 0, 0, 0.1) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app-container::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: -15px;
+            background: linear-gradient(145deg, 
+                rgba(0, 0, 0, 0.4) 0%, 
+                rgba(0, 35, 228, 0.2) 100%);
+            border-radius: 25px;
+            z-index: -1;
+            filter: blur(20px);
+            opacity: 0.8;
+        }
+
+        .app-container > * {
+            position: relative;
+            z-index: 1;
+        }
+        .status-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 30px; }
+        .pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            color: var(--text-primary); 
+            font-size: 1rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 6px 15px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            justify-content: space-between;
+        }
+
+        .pill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(0, 35, 228, 0.15) 0%, 
+                rgba(0, 71, 179, 0.1) 50%,
+                transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 16px;
+        }
+
+        .pill:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.12),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+                0 0 15px rgba(0, 35, 228, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .pill:hover::before {
+            opacity: 1;
+        }
+
+        .pill-label { 
+            color: var(--text-primary); 
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pill-label i {
+            color: #ffffff; 
+            font-size: 1.1rem;
+            filter: brightness(1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .pill-value { 
+            font-weight: 600; 
+            color: var(--text-main); 
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .status-value.stopped { color: var(--accent-stop); text-shadow: 0 0 8px rgba(255, 41, 87, 0.4); }
+        .status-value.running { color: var(--accent-green); text-shadow: 0 0 8px rgba(0, 212, 255, 0.4); }
+        .status-value.drag { color: #55FF00; text-shadow: 0 0 8px rgba(255, 165, 0, 0.4); }
+        .status-value.waiting { color: #55FF00; text-shadow: 0 0 8px rgba(189, 0, 255, 0.4); }
+
+        .main-action-area { display: flex; gap: 15px; }
+        
+        .cyber-btn {
+            flex: 1;
+            padding: 18px 20px;
+            background: linear-gradient(145deg, 
+                #0023e4 0%, 
+                #0047b3 50%, 
+                #0066ff 100%);
+            border: none;
+            border-radius: 12px;
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 
+                0 10px 25px rgba(0, 35, 228, 0.4),
+                0 5px 15px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0, 35, 228, 0.6);
+        }
+
+        .cyber-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 12px;
+        }
+
+        .cyber-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 15px 30px rgba(0, 35, 228, 0.6),
+                0 8px 20px rgba(0, 0, 0, 0.5),
+                inset 0 2px 0 rgba(255, 255, 255, 0.3),
+                0 0 20px rgba(0, 100, 255, 0.4);
+            background: linear-gradient(145deg, 
+                #0033ff 0%, 
+                #0055cc 50%, 
+                #0077ff 100%);
+        }
+
+        .cyber-btn:hover::before { opacity: 1; }
+
+        .cyber-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 
+                0 5px 15px rgba(0, 35, 228, 0.4),
+                0 3px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .cyber-btn:active::before {
+            opacity: 0.5;
+        }
+
+        .cyber-btn.btn-stop {
+            background: linear-gradient(145deg, 
+                #ff2957 0%, 
+                #d50032 50%, 
+                #ff4b73 100%);
+            box-shadow: 
+                0 10px 25px rgba(255, 41, 87, 0.4),
+                0 5px 15px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 41, 87, 0.6);
+            display: none;
+        }
+
+        .cyber-btn.btn-stop:hover {
+            background: linear-gradient(145deg, 
+                #ff3366 0%, 
+                #e50040 50%, 
+                #ff5580 100%);
+            box-shadow: 
+                0 15px 30px rgba(255, 41, 87, 0.6),
+                0 8px 20px rgba(0, 0, 0, 0.5),
+                inset 0 2px 0 rgba(255, 255, 255, 0.3),
+                0 0 20px rgba(255, 41, 87, 0.4);
+        }
+
+
+        .glass-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--text-primary); 
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 10px 25px rgba(0, 35, 228, 0.4),
+                0 5px 15px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            justify-content: center;
+        }
+
+        .glass-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 12px;
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 15px 30px rgba(0, 35, 228, 0.6),
+                0 8px 20px rgba(0, 0, 0, 0.5),
+                inset 0 2px 0 rgba(255, 255, 255, 0.3),
+                0 0 20px rgba(0, 100, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-btn:hover::before {
+            opacity: 1;
+        }
+
+        .glass-btn i {
+            color: #ffffff; 
+            font-size: 1.2rem;
+            position: relative;
+            z-index: 1;
+            filter: brightness(1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-btn.disabled {
+            opacity: 0.5;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .glass-btn.disabled:hover {
+            transform: none;
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 
+                0 10px 25px rgba(0, 35, 228, 0.4),
+                0 5px 15px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-btn.disabled::before {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="status-grid">
+            <div class="pill">
+                <span class="pill-label"><i class="fas fa-microchip"></i> Status</span>
+                <span class="pill-value status-value stopped" id="statusText">Stopped</span>
+            </div>
+            <div class="pill">
+                <span class="pill-label"><i class="fas fa-sync-alt"></i> Progress</span>
+                <span class="pill-value" id="loopText">Set 0/3 - Loop 0/9</span>
+            </div>
+        </div>
+        <div class="main-action-area">
+            <button class="cyber-btn" id="startBtn" onclick="callPythonStart()">
+                <i class="fas fa-play"></i> RUN
+            </button>
+            <button class="cyber-btn btn-stop" id="stopBtn" onclick="callPythonStop()">
+                <i class="fas fa-stop"></i> STOP
+            </button>
+            <button class="glass-btn active" id="keybindBtn" onclick="callPythonToggle()">
+                <i class="fas fa-keyboard"></i> Key
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Internal Logic for UI behavior
+        let isKeybindActive = true;
+        let isRunning = false;
+        let automationTimeout = null;
+
+        function callPythonStart() {
+            // Simulation of Backend start_action
+            isRunning = true;
+            setRunningState(true);
+            runAutomationDemo();
+        }
+
+        function callPythonStop() {
+            // Simulation of Backend stop_action
+            isRunning = false;
+            if (automationTimeout) {
+                clearTimeout(automationTimeout);
+                automationTimeout = null;
+            }
+            setRunningState(false);
+            updateStatus("Stopped", "stopped");
+        }
+
+        function callPythonToggle() {
+            // Simulation of Backend toggle_keybinds
+            isKeybindActive = !isKeybindActive;
+            updateKeybindBtn(isKeybindActive);
+        }
+
+        // Demo automation sequence matching Python behavior
+        async function runAutomationDemo() {
+            const yCoordinates = [700, 650, 550];
+            
+            for (let setCount = 0; setCount < 3 && isRunning; setCount++) {
+                const yCoord = yCoordinates[setCount];
+                
+                // Drag sequence
+                updateStatus(`Drag Y:${yCoord}`, "drag");
+                await sleep(1000); // Simulating drag_sequence duration
+                
+                if (!isRunning) break;
+                
+                // Waiting phase
+                updateStatus("Waiting...", "waiting");
+                await sleep(1000);
+                
+                if (!isRunning) break;
+                
+                // Selling loops
+                updateStatus("Selling", "running");
+                
+                for (let loopCount = 0; loopCount < 9 && isRunning; loopCount++) {
+                    updateLoopCounter(`Set ${setCount + 1}/3 - Loop ${loopCount + 1}/9`);
+                    await sleep(150); // Simulating each sell action
+                }
+                
+                if (!isRunning) break;
+            }
+            
+            // Complete if not stopped
+            if (isRunning) {
+                updateLoopCounter("All Sets Complete!");
+                await sleep(500);
+                callPythonStop();
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => {
+                automationTimeout = setTimeout(resolve, ms);
+            });
+        }
+
+        // Functions requested by backend
+        function setRunningState(running) {
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const keybindBtn = document.getElementById('keybindBtn');
+            if (running) {
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'flex';
+                keybindBtn.style.display = 'flex';
+            } else {
+                startBtn.style.display = 'flex';
+                stopBtn.style.display = 'none';
+                keybindBtn.style.display = 'flex';
+            }
+        }
+
+        function updateStatus(text, type) {
+            const el = document.getElementById('statusText');
+            el.innerText = text;
+            el.className = 'pill-value status-value ' + type;
+        }
+
+        function updateLoopCounter(text) {
+            document.getElementById('loopText').innerText = text;
+        }
+
+        function updateKeybindBtn(isEnabled) {
+            const btn = document.getElementById('keybindBtn');
+            if (isEnabled) {
+                btn.classList.add('active');
+                btn.classList.remove('disabled');
+                btn.innerHTML = '<i class="fas fa-keyboard"></i> Key';
+            } else {
+                btn.classList.remove('active');
+                btn.classList.add('disabled');
+                btn.innerHTML = '<i class="fas fa-keyboard"></i> Off';
+            }
+        }
+    </script>
+</body>
+</html>
