@@ -24,12 +24,19 @@ class AutomationUI:
         self.window.title("Auto")
         self.window.geometry("250x100")
         self.window.resizable(False, False)
+        self.window.configure(bg="#1e1e1e")
 
         self.window.attributes('-topmost', 1)
         self.window.lift()
 
         # Status
-        self.status_label = tk.Label(self.window, text="Status: Stopped", font=("Arial", 10, "bold"), fg="red")
+        self.status_label = tk.Label(
+            self.window,
+            text="Status: Stopped",
+            font=("Arial", 10, "bold"),
+            fg="red",
+            bg="#1e1e1e"
+        )
         self.status_label.pack()
 
         # Counter
@@ -37,16 +44,24 @@ class AutomationUI:
             self.window,
             text="Set: 0 / 3 | Loops: 0 / 9",
             font=("Arial", 10, "bold"),
-            fg="blue"
+            fg="white",
+            bg="#1e1e1e"
         )
         self.counter_label.pack()
 
         # Control Frame (Input + Run + Key in one row)
-        self.control_frame = tk.Frame(self.window)
+        self.control_frame = tk.Frame(self.window, bg="#1e1e1e")
         self.control_frame.pack(pady=5, expand=True)
 
-        self.input_entry = tk.Entry(self.control_frame, width=5, justify="center",
-                                    font=("Arial", 12, "bold"))
+        self.input_entry = tk.Entry(
+            self.control_frame,
+            width=5,
+            justify="center",
+            bg="#2d2d2d",
+            fg="white",
+            font=("Arial", 14, "bold"),
+            insertbackground="white"
+        )
         self.input_entry.insert(0, "200k")
         self.input_entry.grid(row=0, column=0, padx=1)
 
@@ -55,7 +70,7 @@ class AutomationUI:
             self.control_frame,
             text="Run",
             command=self.toggle_running,
-            bg="green",
+            bg="#2d2d2d",
             fg="white",
             width=7,
             font=("Arial", 10, "bold")
@@ -67,8 +82,8 @@ class AutomationUI:
             self.control_frame,
             text="Key",
             command=self.toggle_keybinds,
-            bg="white",
-            fg="red",
+            bg="#2d2d2d",
+            fg="#3a3a3a",
             width=7,
             font=("Arial", 10, "bold")
         )
@@ -96,10 +111,10 @@ class AutomationUI:
 
         if self.keybinds_enabled:
             # Enabled → Green text
-            self.toggle_keybind_btn.config(fg="green")
+            self.toggle_keybind_btn.config(fg="white")
         else:
             # Disabled → Red text
-            self.toggle_keybind_btn.config(fg="red")
+            self.toggle_keybind_btn.config(fg="#3a3a3a")
 
     def hotkey_start(self):
         if self.keybinds_enabled:
@@ -116,7 +131,7 @@ class AutomationUI:
             self.toggle_btn.config(text="Stop (P)", bg="red")
         else:
             self.stop()
-            self.toggle_btn.config(text="Run", bg="green")
+            self.toggle_btn.config(text="Run", bg="#2d2d2d")
 
     def start(self):
         if not self.running:
@@ -125,7 +140,7 @@ class AutomationUI:
             self.set_count = 0
             self.update_counter()
 
-            self.status_label.config(text="Status: Selling", fg="green")
+            self.status_label.config(text="Status: Selling", fg="#55FF00")
             self.toggle_btn.config(text="Stop (P)", bg="red")
 
             thread = Thread(target=self.run_automation)
@@ -136,7 +151,7 @@ class AutomationUI:
         if self.running:
             self.running = False
             self.status_label.config(text="Status: Stopped", fg="red")
-            self.toggle_btn.config(text="Run", bg="green")
+            self.toggle_btn.config(text="Run", bg="#2d2d2d")
 
     def drag_sequence(self, y_coord):
         try:
@@ -193,7 +208,7 @@ class AutomationUI:
                 break
 
             self.loop_count = 0
-            self.status_label.config(text="Status: Selling", fg="green")
+            self.status_label.config(text="Status: Selling", fg="#55FF00")
             self.update_counter()
 
             while self.running and self.loop_count < 9:
