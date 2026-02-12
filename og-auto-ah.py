@@ -41,13 +41,14 @@ class AutomationUI:
         )
         self.counter_label.pack()
 
-        # Control Frame
+        # Control Frame (Input + Run + Key in one row)
         self.control_frame = tk.Frame(self.window)
-        self.control_frame.pack(pady=5)
+        self.control_frame.pack(pady=5, expand=True)
 
-        self.input_entry = tk.Entry(self.control_frame, width=5, justify="center")
+        self.input_entry = tk.Entry(self.control_frame, width=5, justify="center",
+                                    font=("Arial", 12, "bold"))
         self.input_entry.insert(0, "200k")
-        self.input_entry.grid(row=0, column=0, padx=8)
+        self.input_entry.grid(row=0, column=0, padx=1)
 
         # Toggle Start/Stop Button
         self.toggle_btn = tk.Button(
@@ -56,9 +57,10 @@ class AutomationUI:
             command=self.toggle_running,
             bg="green",
             fg="white",
-            width=8
+            width=7,
+            font=("Arial", 10, "bold")
         )
-        self.toggle_btn.grid(row=0, column=1, padx=5)
+        self.toggle_btn.grid(row=0, column=1, padx=1)
 
         # Enable Keybind Button
         self.toggle_keybind_btn = tk.Button(
@@ -67,9 +69,10 @@ class AutomationUI:
             command=self.toggle_keybinds,
             bg="white",
             fg="red",
-            width=8
+            width=7,
+            font=("Arial", 10, "bold")
         )
-        self.toggle_keybind_btn.grid(row=0, column=2, padx=5)
+        self.toggle_keybind_btn.grid(row=0, column=2, padx=1)
 
         keyboard.add_hotkey('o', self.hotkey_start)
         keyboard.add_hotkey('p', self.hotkey_stop)
@@ -92,8 +95,10 @@ class AutomationUI:
         self.keybinds_enabled = not self.keybinds_enabled
 
         if self.keybinds_enabled:
+            # Enabled → Green text
             self.toggle_keybind_btn.config(fg="green")
         else:
+            # Disabled → Red text
             self.toggle_keybind_btn.config(fg="red")
 
     def hotkey_start(self):
