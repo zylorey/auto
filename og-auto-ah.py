@@ -19,37 +19,36 @@ class AutomationUI:
         self.mouse = Controller()
         self.loop_count = 0
         self.set_count = 0
-        
         self.window = tk.Tk()
         self.window.overrideredirect(True)
-        self.window.geometry("250x130")
+        self.window.geometry("250x140")
         self.window.resizable(False, False)
         self.window.configure(bg="#1e1e1e")
-
         self.window.attributes('-topmost', 1)
 
         # CUSTOM DARK TITLE BAR
-        self.title_bar = tk.Frame(self.window, bg="#2d2d2d", height=30)
+        self.title_bar = tk.Frame(self.window, bg="#2d2d2d", height=35)
         self.title_bar.pack(fill="x")
+        self.title_bar.pack_propagate(False)
 
         self.title_label = tk.Label(
             self.title_bar,
-            text="  Auto",
+            text="Auto",
             bg="#2d2d2d",
             fg="white",
             font=("Arial", 10, "bold")
         )
-        self.title_label.pack(side="left")
+        self.title_label.pack(side="left", fill="y", padx=10)
 
         self.close_button = tk.Label(
             self.title_bar,
-            text="  ✕  ",
+            text="   ✕   ",
             bg="#2d2d2d",
             fg="white",
             font=("Arial", 10),
             cursor="hand2"
         )
-        self.close_button.pack(side="right")
+        self.close_button.pack(side="right", fill="y")
         self.close_button.bind("<Button-1>", lambda e: self.window.destroy())
         self.close_button.bind("<Enter>", lambda e: self.close_button.config(bg="red"))
         self.close_button.bind("<Leave>", lambda e: self.close_button.config(bg="#2d2d2d"))
