@@ -29,20 +29,34 @@ class AutomationUI:
         self.window.attributes('-topmost', 1)
         self.window.lift()
 
+        # Status Frame
+        self.status_frame = tk.Frame(self.window, bg="#1e1e1e")
+        self.status_frame.pack(anchor="w", padx=47)
+
         # Status
+        self.status_text_label = tk.Label(
+            self.status_frame,
+            text="Status:",
+            font=("Arial", 10, "bold"),
+            fg="white",
+            bg="#1e1e1e"
+        )
+        self.status_text_label.pack(side="left")
+
+        # Dynamic status
         self.status_label = tk.Label(
-            self.window,
-            text="Status: Stopped",
+            self.status_frame,
+            text=" Stopped",
             font=("Arial", 10, "bold"),
             fg="red",
             bg="#1e1e1e"
         )
-        self.status_label.pack()
+        self.status_label.pack(side="left")
 
         # Counter
         self.counter_label = tk.Label(
             self.window,
-            text="Set: 0 / 3 | Loops: 0 / 9",
+            text="Set: 0/3 - Loop: 0/9",
             font=("Arial", 10, "bold"),
             fg="white",
             bg="#1e1e1e"
@@ -96,7 +110,7 @@ class AutomationUI:
 
     def update_counter(self):
         self.counter_label.config(
-            text=f"Set: {self.set_count} / 3 | Loops: {self.loop_count} / 9"
+            text=f"Set: {self.set_count}/3 - Loop: {self.loop_count}/9"
         )
 
     def copy_text(self):
@@ -140,7 +154,7 @@ class AutomationUI:
             self.set_count = 0
             self.update_counter()
 
-            self.status_label.config(text="Status: Selling", fg="#55FF00")
+            self.status_label.config(text=" Selling", fg="#55FF00")
             self.toggle_btn.config(text="Stop (P)", bg="red")
 
             thread = Thread(target=self.run_automation)
@@ -150,7 +164,7 @@ class AutomationUI:
     def stop(self):
         if self.running:
             self.running = False
-            self.status_label.config(text="Status: Stopped", fg="red")
+            self.status_label.config(text=" Stopped", fg="red")
             self.toggle_btn.config(text="Run", bg="#2d2d2d")
 
     def drag_sequence(self, y_coord):
@@ -195,20 +209,20 @@ class AutomationUI:
         while self.running and self.set_count < 3:
             y_coord = y_coordinates[self.set_count]
 
-            self.status_label.config(text=f"Status: Drag (y={y_coord})", fg="orange")
+            self.status_label.config(text=f" Drag Y:{y_coord}", fg="#55FF00")
             self.drag_sequence(y_coord)
 
             if not self.running:
                 break
 
-            self.status_label.config(text="Status: Waiting...", fg="blue")
+            self.status_label.config(text=" Waiting...", fg="#55FF00")
             time.sleep(1.0)
 
             if not self.running:
                 break
 
             self.loop_count = 0
-            self.status_label.config(text="Status: Selling", fg="#55FF00")
+            self.status_label.config(text=" Selling", fg="#55FF00")
             self.update_counter()
 
             while self.running and self.loop_count < 9:
