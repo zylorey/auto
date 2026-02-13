@@ -21,19 +21,61 @@ class AutomationUI:
         self.set_count = 0
         
         self.window = tk.Tk()
-        self.window.title("Auto")
-        self.window.geometry("250x100")
+        self.window.overrideredirect(True)
+        self.window.geometry("250x130")
         self.window.resizable(False, False)
         self.window.configure(bg="#1e1e1e")
 
         self.window.attributes('-topmost', 1)
-        self.window.lift()
 
-        # Status Frame
+        # CUSTOM DARK TITLE BAR
+        self.title_bar = tk.Frame(self.window, bg="#2d2d2d", height=30)
+        self.title_bar.pack(fill="x")
+
+        self.title_label = tk.Label(
+            self.title_bar,
+            text="  Auto",
+            bg="#2d2d2d",
+            fg="white",
+            font=("Arial", 10, "bold")
+        )
+        self.title_label.pack(side="left")
+
+        self.close_button = tk.Label(
+            self.title_bar,
+            text="  ✕  ",
+            bg="#2d2d2d",
+            fg="white",
+            font=("Arial", 10),
+            cursor="hand2"
+        )
+        self.close_button.pack(side="right")
+        self.close_button.bind("<Button-1>", lambda e: self.window.destroy())
+        self.close_button.bind("<Enter>", lambda e: self.close_button.config(bg="red"))
+        self.close_button.bind("<Leave>", lambda e: self.close_button.config(bg="#2d2d2d"))
+
+        # DRAG SYSTEM
+        self.offset_x = 0
+        self.offset_y = 0
+
+        def start_move(event):
+            self.offset_x = event.x
+            self.offset_y = event.y
+
+        def do_move(event):
+            x = event.x_root - self.offset_x
+            y = event.y_root - self.offset_y
+            self.window.geometry(f"+{x}+{y}")
+
+        self.title_bar.bind("<Button-1>", start_move)
+        self.title_bar.bind("<B1-Motion>", do_move)
+        self.title_label.bind("<Button-1>", start_move)
+        self.title_label.bind("<B1-Motion>", do_move)
+
+        # STATUS FRAME
         self.status_frame = tk.Frame(self.window, bg="#1e1e1e")
-        self.status_frame.pack(anchor="w", padx=47)
+        self.status_frame.pack(anchor="w", padx=47, pady=(5, 0))
 
-        # Status
         self.status_text_label = tk.Label(
             self.status_frame,
             text="Status:",
@@ -43,7 +85,6 @@ class AutomationUI:
         )
         self.status_text_label.pack(side="left")
 
-        # Dynamic status
         self.status_label = tk.Label(
             self.status_frame,
             text=" Stopped",
@@ -53,7 +94,6 @@ class AutomationUI:
         )
         self.status_label.pack(side="left")
 
-        # Counter
         self.counter_label = tk.Label(
             self.window,
             text="Set: 0/3 - Loop: 0/9",
@@ -63,7 +103,7 @@ class AutomationUI:
         )
         self.counter_label.pack()
 
-        # Control Frame (Input + Run + Key in one row)
+        # CONTROL FRAME
         self.control_frame = tk.Frame(self.window, bg="#1e1e1e")
         self.control_frame.pack(pady=5, expand=True)
 
@@ -79,7 +119,6 @@ class AutomationUI:
         self.input_entry.insert(0, "200k")
         self.input_entry.grid(row=0, column=0, padx=1)
 
-        # Toggle Start/Stop Button
         self.toggle_btn = tk.Button(
             self.control_frame,
             text="Run",
@@ -91,7 +130,6 @@ class AutomationUI:
         )
         self.toggle_btn.grid(row=0, column=1, padx=1)
 
-        # Enable Keybind Button
         self.toggle_keybind_btn = tk.Button(
             self.control_frame,
             text="Key",
@@ -108,6 +146,7 @@ class AutomationUI:
 
         self.window.mainloop()
 
+    # LOGIC FUNCTIONS
     def update_counter(self):
         self.counter_label.config(
             text=f"Set: {self.set_count}/3 - Loop: {self.loop_count}/9"
@@ -124,10 +163,8 @@ class AutomationUI:
         self.keybinds_enabled = not self.keybinds_enabled
 
         if self.keybinds_enabled:
-            # Enabled → Green text
             self.toggle_keybind_btn.config(fg="white")
         else:
-            # Disabled → Red text
             self.toggle_keybind_btn.config(fg="#3a3a3a")
 
     def hotkey_start(self):
