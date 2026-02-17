@@ -4,6 +4,7 @@ import tkinter as tk
 from threading import Thread
 import keyboard
 from pynput.mouse import Controller
+import pywinstyles
 
 #  █████╗ ██╗   ██╗████████╗ ██████╗ 
 # ██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗
@@ -20,56 +21,14 @@ class AutomationUI:
         self.loop_count = 0
         self.set_count = 0
         self.window = tk.Tk()
-        self.window.overrideredirect(True)
-        self.window.geometry("250x140")
+        self.window.title("Auto")
+        self.window.geometry("250x110")
         self.window.resizable(False, False)
         self.window.configure(bg="#1e1e1e")
         self.window.attributes('-topmost', 1)
 
-        # CUSTOM DARK TITLE BAR
-        self.title_bar = tk.Frame(self.window, bg="#2d2d2d", height=35)
-        self.title_bar.pack(fill="x")
-        self.title_bar.pack_propagate(False)
-
-        self.title_label = tk.Label(
-            self.title_bar,
-            text="Auto",
-            bg="#2d2d2d",
-            fg="white",
-            font=("Arial", 10, "bold")
-        )
-        self.title_label.pack(side="left", fill="y", padx=10)
-
-        self.close_button = tk.Label(
-            self.title_bar,
-            text="   ✕   ",
-            bg="#2d2d2d",
-            fg="white",
-            font=("Arial", 10),
-            cursor="hand2"
-        )
-        self.close_button.pack(side="right", fill="y")
-        self.close_button.bind("<Button-1>", lambda e: self.window.destroy())
-        self.close_button.bind("<Enter>", lambda e: self.close_button.config(bg="red"))
-        self.close_button.bind("<Leave>", lambda e: self.close_button.config(bg="#2d2d2d"))
-
-        # DRAG SYSTEM
-        self.offset_x = 0
-        self.offset_y = 0
-
-        def start_move(event):
-            self.offset_x = event.x
-            self.offset_y = event.y
-
-        def do_move(event):
-            x = event.x_root - self.offset_x
-            y = event.y_root - self.offset_y
-            self.window.geometry(f"+{x}+{y}")
-
-        self.title_bar.bind("<Button-1>", start_move)
-        self.title_bar.bind("<B1-Motion>", do_move)
-        self.title_label.bind("<Button-1>", start_move)
-        self.title_label.bind("<B1-Motion>", do_move)
+        # DARK NATIVE TITLE BAR
+        self.window.after(1, lambda: pywinstyles.change_header_color(self.window, "#1c1c1c"))
 
         # STATUS FRAME
         self.status_frame = tk.Frame(self.window, bg="#1e1e1e")
