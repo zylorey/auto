@@ -10,6 +10,11 @@ import time
 import keyboard  # For global hotkeys
 from pynput import mouse  # For mouse scrolling
 from mss import mss
+import pywinstyles
+import sv_ttk
+
+def apply_theme_to_titlebar(root):
+    root.after(1, lambda: pywinstyles.change_header_color(root, "#1c1c1c"))
 
 class HotbarDetector:
     """Hotbar detector for checking if selected slot has block or is empty"""
@@ -131,9 +136,12 @@ class HotbarDetectorGUI:
     def __init__(self, root):
         self.window = tk.Toplevel(root)
         self.window.title("Hotbar Detector")
-        self.window.geometry("470x120+1400+50")  # Width x Height + X position + Y position
+        self.window.geometry("470x112+1400+50")  # Width x Height + X position + Y position
         self.window.resizable(False, False)
         self.window.attributes('-topmost', 1)
+        
+        # Apply dark title bar
+        apply_theme_to_titlebar(self.window)
         
         self.hotbar_detector = HotbarDetector()
         
@@ -337,9 +345,12 @@ class ChestDetectorGUI:
     def __init__(self, root):
         self.window = tk.Toplevel(root)
         self.window.title("Chest Monitor")
-        self.window.geometry("327x170+1400+210")  # Width x Height + X position + Y position
+        self.window.geometry("330x163+1400+210")  # Width x Height + X position + Y position
         self.window.resizable(False, False)
         self.window.attributes('-topmost', True)
+        
+        # Apply dark title bar
+        apply_theme_to_titlebar(self.window)
         
         # HARDCODED SETTINGS
         self.x1 = 635
@@ -390,6 +401,7 @@ class ChestDetectorGUI:
         
         self.window.columnconfigure(0, weight=1)
         self.window.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(0, weight=1)
         
         # ===== TOP - INFO (HORIZONTAL LAYOUT) =====
         info_frame = ttk.Frame(main_frame, padding="1")
@@ -451,7 +463,7 @@ class ChestDetectorGUI:
         display_width = int(capture_width * 0.5)
         display_height = int(capture_height * 0.5)
         
-        self.canvas = tk.Canvas(video_frame, bg="white", 
+        self.canvas = tk.Canvas(video_frame, bg="#292929", 
                                width=display_width, 
                                height=display_height,
                                highlightthickness=0)
@@ -791,9 +803,12 @@ class AutomatedAHBot:
     def __init__(self, root):
         self.root = root
         self.root.title("Auto AH")
-        self.root.geometry("300x280+50+50")  # Reduced height since button removed
+        self.root.geometry("330x290+1400+420")  # Reduced height since button removed
         self.root.resizable(False, False)
         self.root.attributes('-topmost', True)
+        
+        # Apply dark title bar
+        apply_theme_to_titlebar(self.root)
         
         # Detectors
         self.detector = InventoryDetector()
@@ -829,12 +844,21 @@ class AutomatedAHBot:
     
     def setup_ui(self):
         """Setup the user interface"""
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_frame = ttk.Frame(self.root, padding="0")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=15, pady=(2, 15))
+        style = ttk.Style()
+        style.configure("TLabelframe.Label", font=("Arial", 10, "bold"))
+        style.configure("TRadiobutton", font=("Arial", 10))
+        style.configure("TEntry", font=("Arial", 10))
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(0, weight=1)
+        main_frame.columnconfigure(1, weight=1)
         
         # Order Option Selection
         option_frame = ttk.LabelFrame(main_frame, text="Order Option", padding="10")
-        option_frame.grid(row=0, column=0, columnspan=2, pady=0, sticky=(tk.W, tk.E))
+        option_frame.grid(row=0, column=0, columnspan=2, pady=(0, 8), sticky=(tk.W, tk.E))
+        option_frame.columnconfigure((0, 1, 2, 3), weight=1)
         
         # Horizontal layout for radio buttons
         ttk.Radiobutton(option_frame, text=" 1", 
@@ -848,16 +872,18 @@ class AutomatedAHBot:
         
         # Sell Price
         price_frame = ttk.LabelFrame(main_frame, text="Sell Price", padding="10")
-        price_frame.grid(row=1, column=0, columnspan=2, pady=0, sticky=(tk.W, tk.E))
+        price_frame.grid(row=1, column=0, columnspan=2, pady=(0, 8), sticky=(tk.W, tk.E))
+        price_frame.columnconfigure(0, weight=1)
         
-        ttk.Entry(price_frame, textvariable=self.sell_price, width=20).pack()
+        ttk.Entry(price_frame, textvariable=self.sell_price, width=20, 
+                 font=("Arial", 10)).pack(fill=tk.X)
         
         # Status
         status_frame = ttk.LabelFrame(main_frame, text="Status", padding="10")
-        status_frame.grid(row=2, column=0, columnspan=2, pady=0, sticky=(tk.W, tk.E))
+        status_frame.grid(row=2, column=0, columnspan=2, pady=(0, 8), sticky=(tk.W, tk.E))
         
         self.status_label = ttk.Label(status_frame, text="Ready to start", 
-                                     font=("Arial", 10))
+                                     font=("Arial", 10, "bold"))
         self.status_label.pack()
         
         self.progress_label = ttk.Label(status_frame, text="", 
@@ -866,16 +892,18 @@ class AutomatedAHBot:
         
         # Control Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=3, column=0, columnspan=2, pady=0)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=(4, 0), sticky=(tk.W, tk.E))
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
         
         self.start_button = ttk.Button(button_frame, text="Start (Ctrl+O)", 
-                                      command=self.start_automation, width=15)
-        self.start_button.grid(row=0, column=0, padx=5)
+                                      command=self.start_automation)
+        self.start_button.grid(row=0, column=0, padx=(0, 5), sticky=(tk.W, tk.E))
         
         self.stop_button = ttk.Button(button_frame, text="Stop (Ctrl+P)", 
                                      command=self.stop_automation, 
-                                     state=tk.DISABLED, width=15)
-        self.stop_button.grid(row=0, column=1, padx=5)
+                                     state=tk.DISABLED)
+        self.stop_button.grid(row=0, column=1, padx=(5, 0), sticky=(tk.W, tk.E))
         
         # Setup hotkeys
         try:
@@ -1212,6 +1240,10 @@ def main():
     pyautogui.FAILSAFE = True
     
     root = tk.Tk()
+    
+    # Apply Sun Valley theme
+    sv_ttk.set_theme("dark")
+    
     app = AutomatedAHBot(root)
     
     # Handle window close event
