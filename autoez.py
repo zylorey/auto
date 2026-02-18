@@ -809,13 +809,32 @@ class InventoryDetector:
         self.load_templates()
     
     def load_templates(self):
-        """Load book template"""
+        """Load book and paper templates"""
         try:
             self.book_template = cv2.imread('book.png', cv2.IMREAD_UNCHANGED)
             if self.book_template is None:
                 print("⚠️ WARNING: book.png not found")
         except Exception as e:
             print(f"Error loading book.png: {e}")
+
+        # Load paper template
+        self.paper_template = None
+        self.paper_template_gray = None
+        self.paper_match_threshold = 0.6
+        self.debug_counter = 0
+        try:
+            self.paper_template = cv2.imread('paper.png', cv2.IMREAD_UNCHANGED)
+            if self.paper_template is None:
+                print("⚠️ WARNING: paper.png not found. Falling back to intensity-based detection.")
+            else:
+                print(f"✅ Paper template loaded! Size: {self.paper_template.shape}")
+                if len(self.paper_template.shape) == 3 and self.paper_template.shape[2] == 4:
+                    self.paper_template = cv2.cvtColor(self.paper_template, cv2.COLOR_BGRA2BGR)
+                self.paper_template_gray = cv2.cvtColor(self.paper_template, cv2.COLOR_BGR2GRAY)
+        except Exception as e:
+            print(f"Error loading paper.png: {e}")
+            self.paper_template = None
+            self.paper_template_gray = None
     
     def detect_book_on_screen(self):
         """Detect if book.png is visible on screen"""
@@ -853,6 +872,47 @@ class InventoryDetector:
             print(f"Capture error: {e}")
             return None
     
+    def detect_paper_in_slot(self, slot_roi, slot_index):
+        """
+        Detect if paper.png is present in a slot using multi-scale template matching.
+        Returns (is_paper: bool, confidence: float)
+        """
+        if self.paper_template is None or self.paper_template_gray is None or slot_roi.size == 0:
+            return False, 0.0
+
+        try:
+            template_h, template_w = self.paper_template.shape[:2]
+
+            if slot_roi.shape[0] < template_h * 0.5 or slot_roi.shape[1] < template_w * 0.5:
+                return False, 0.0
+
+            slot_gray = cv2.cvtColor(slot_roi, cv2.COLOR_BGR2GRAY)
+
+            scales = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
+            max_confidence = 0.0
+
+            for scale in scales:
+                width  = int(self.paper_template_gray.shape[1] * scale)
+                height = int(self.paper_template_gray.shape[0] * scale)
+
+                if width > slot_gray.shape[1] or height > slot_gray.shape[0]:
+                    continue
+                if width < 5 or height < 5:
+                    continue
+
+                scaled_template = cv2.resize(self.paper_template_gray, (width, height))
+                result = cv2.matchTemplate(slot_gray, scaled_template, cv2.TM_CCOEFF_NORMED)
+                _, max_val, _, _ = cv2.minMaxLoc(result)
+
+                if max_val > max_confidence:
+                    max_confidence = max_val
+
+            is_paper = max_confidence >= self.paper_match_threshold
+            return is_paper, max_confidence
+
+        except Exception as e:
+            return False, 0.0
+
     def detect_slots(self, img):
         """Detect chest slots and count empty ones"""
         if img is None:
@@ -879,18 +939,25 @@ class InventoryDetector:
             slots = sorted(slots, key=lambda s: (s[1], s[0]))
             
             empty_count = 0
-            
+            self.debug_counter += 1
+
             for i, (x, y, w, h) in enumerate(slots[:27]):
                 slot_roi = img[y:y+h, x:x+w]
-                
+
                 if slot_roi.size == 0:
                     continue
-                
-                std_intensity = np.std(slot_roi)
-                is_empty = std_intensity < self.threshold
-                if is_empty:
+
+                # First try paper template matching
+                has_paper, confidence = self.detect_paper_in_slot(slot_roi, i)
+
+                if has_paper:
                     empty_count += 1
-            
+                else:
+                    # Fall back to intensity-based detection
+                    std_intensity = np.std(slot_roi)
+                    if std_intensity < self.threshold:
+                        empty_count += 1
+
             return empty_count
             
         except Exception as e:
@@ -1456,4 +1523,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
