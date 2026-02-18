@@ -897,19 +897,18 @@ class AutomatedAHBot:
         button_frame.columnconfigure(1, weight=1)
         
         self.start_button = ttk.Button(button_frame, text="Start (Ctrl+O)", 
-                                      command=self.start_automation)
+                                      command=self.toggle_automation)
         self.start_button.grid(row=0, column=0, padx=(0, 5), sticky=(tk.W, tk.E))
         
-        self.stop_button = ttk.Button(button_frame, text="Stop (Ctrl+P)", 
-                                     command=self.stop_automation, 
-                                     state=tk.DISABLED)
-        self.stop_button.grid(row=0, column=1, padx=(5, 0), sticky=(tk.W, tk.E))
+        self.auto_sell_button = ttk.Button(button_frame, text="Auto Sell (Ctrl+P)", 
+                                           command=self.start_auto_sell)
+        self.auto_sell_button.grid(row=0, column=1, padx=(5, 0), sticky=(tk.W, tk.E))
         
         # Setup hotkeys
         try:
-            keyboard.add_hotkey('ctrl+o', self.start_automation)
-            keyboard.add_hotkey('ctrl+p', self.stop_automation)
-            print("🔑 Hotkeys registered: Ctrl+O (Start), Ctrl+P (Stop)")
+            keyboard.add_hotkey('ctrl+o', self.toggle_automation)
+            keyboard.add_hotkey('ctrl+p', self.start_auto_sell)
+            print("🔑 Hotkeys registered: Ctrl+O (Toggle Start/Stop), Ctrl+P (Auto Sell)")
         except Exception as e:
             print(f"Warning: Could not register hotkeys: {e}")
     
@@ -933,6 +932,13 @@ class AutomatedAHBot:
         self.progress_label.config(text=progress)
         self.root.update()
     
+    def toggle_automation(self):
+        """Toggle start/stop of the main automation"""
+        if self.running:
+            self.stop_automation()
+        else:
+            self.start_automation()
+
     def start_automation(self):
         """Start the automation process"""
         if self.running:
@@ -940,8 +946,8 @@ class AutomatedAHBot:
         
         self.running = True
         self.stop_requested = False
-        self.start_button.config(state=tk.DISABLED)
-        self.stop_button.config(state=tk.NORMAL)
+        self.start_button.config(text="Stop (Ctrl+O)")
+        self.auto_sell_button.config(state=tk.DISABLED)
         
         # Run automation in separate thread
         automation_thread = threading.Thread(target=self.run_automation, daemon=True)
@@ -1211,12 +1217,104 @@ class AutomatedAHBot:
         """Clean up after automation"""
         self.running = False
         self.stop_requested = False
-        self.start_button.config(state=tk.NORMAL)
-        self.stop_button.config(state=tk.DISABLED)
+        self.start_button.config(text="Start (Ctrl+O)")
+        self.auto_sell_button.config(state=tk.NORMAL)
         
         if not self.status_label.cget("text").startswith("✅"):
             self.update_status("Ready to start", "")
     
+    def start_auto_sell(self):
+        """Start the auto sell routine from auto.py logic"""
+        if self.running or getattr(self, '_auto_sell_running', False):
+            return
+        
+        self._auto_sell_running = True
+        self._auto_sell_stop = False
+        self.auto_sell_button.config(state=tk.DISABLED)
+        self.start_button.config(state=tk.DISABLED)
+        
+        thread = threading.Thread(target=self._run_auto_sell, daemon=True)
+        thread.start()
+
+    def _run_auto_sell(self):
+        """Auto sell logic ported from auto.py - uses sell_price from this UI"""
+        try:
+            mouse_ctrl = mouse.Controller()
+            
+            # Copy the sell command using the sell_price from this UI
+            sell_value = self.sell_price.get()
+            sell_command = f"/ah sell {sell_value}"
+            pyperclip.copy(sell_command)
+            
+            y_coordinates = [700, 650, 550]
+            
+            for set_idx in range(3):
+                if self._auto_sell_stop:
+                    break
+                
+                y_coord = y_coordinates[set_idx]
+                self.update_status(f"Auto Sell: Drag Y:{y_coord}", f"Set {set_idx+1}/3")
+                
+                # Drag sequence
+                try:
+                    pyautogui.press('e')
+                    time.sleep(0.3)
+                    pyautogui.keyDown('shift')
+                    time.sleep(0.2)
+                    pyautogui.moveTo(1245, y_coord, duration=0.2)
+                    time.sleep(0.1)
+                    pyautogui.mouseDown(button='left')
+                    time.sleep(0.1)
+                    pyautogui.moveTo(670, y_coord, duration=0.5)
+                    time.sleep(0.1)
+                    pyautogui.mouseUp(button='left')
+                    time.sleep(0.1)
+                    pyautogui.keyUp('shift')
+                    time.sleep(0.3)
+                    pyautogui.press('esc')
+                    time.sleep(0.2)
+                except Exception:
+                    try:
+                        pyautogui.keyUp('shift')
+                    except Exception:
+                        pass
+                
+                if self._auto_sell_stop:
+                    break
+                
+                self.update_status("Auto Sell: Waiting...", f"Set {set_idx+1}/3")
+                time.sleep(1.0)
+                
+                if self._auto_sell_stop:
+                    break
+                
+                # Inner sell loop (9 items per set)
+                for loop_idx in range(9):
+                    if self._auto_sell_stop:
+                        break
+                    
+                    self.update_status(f"Auto Sell: Selling", f"Set {set_idx+1}/3 - Item {loop_idx+1}/9")
+                    pyautogui.press('t')
+                    pyautogui.hotkey('ctrl', 'v')
+                    pyautogui.press('enter')
+                    pyautogui.click(1101, 364, duration=0.3)
+                    mouse_ctrl.scroll(0, 1)
+            
+            if not self._auto_sell_stop:
+                self.update_status("✅ Auto Sell complete!", "27 items sold")
+                time.sleep(2)
+        
+        except Exception as e:
+            self.update_status(f"❌ Auto Sell Error: {str(e)}", "")
+        
+        finally:
+            self._auto_sell_running = False
+            self._auto_sell_stop = False
+            self.auto_sell_button.config(state=tk.NORMAL)
+            self.start_button.config(state=tk.NORMAL)
+            if not self.status_label.cget("text").startswith("✅"):
+                self.update_status("Ready to start", "")
+
     def on_closing(self):
         """Handle window closing"""
         try:
