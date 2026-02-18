@@ -345,7 +345,7 @@ class ChestDetectorGUI:
     def __init__(self, root):
         self.window = tk.Toplevel(root)
         self.window.title("Chest Monitor")
-        self.window.geometry("330x163+1400+210")  # Width x Height + X position + Y position
+        self.window.geometry("330x163+1400+202")  # Width x Height + X position + Y position
         self.window.resizable(False, False)
         self.window.attributes('-topmost', True)
         
@@ -803,7 +803,7 @@ class AutomatedAHBot:
     def __init__(self, root):
         self.root = root
         self.root.title("Auto AH")
-        self.root.geometry("330x290+1400+420")  # Reduced height since button removed
+        self.root.geometry("330x290+1400+405")  # Reduced height since button removed
         self.root.resizable(False, False)
         self.root.attributes('-topmost', True)
         
@@ -896,11 +896,11 @@ class AutomatedAHBot:
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
         
-        self.start_button = ttk.Button(button_frame, text="Start (Ctrl+O)", 
+        self.start_button = ttk.Button(button_frame, text="Auto Pro (Ctrl+O)", 
                                       command=self.toggle_automation)
         self.start_button.grid(row=0, column=0, padx=(0, 5), sticky=(tk.W, tk.E))
         
-        self.auto_sell_button = ttk.Button(button_frame, text="Auto Sell (Ctrl+P)", 
+        self.auto_sell_button = ttk.Button(button_frame, text="Auto OG  (Ctrl+P)", 
                                            command=self.start_auto_sell)
         self.auto_sell_button.grid(row=0, column=1, padx=(5, 0), sticky=(tk.W, tk.E))
         
@@ -1217,7 +1217,7 @@ class AutomatedAHBot:
         """Clean up after automation"""
         self.running = False
         self.stop_requested = False
-        self.start_button.config(text="Start (Ctrl+O)")
+        self.start_button.config(text="Auto Pro (Ctrl+O)")
         self.auto_sell_button.config(state=tk.NORMAL)
         
         if not self.status_label.cget("text").startswith("✅"):
