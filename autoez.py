@@ -609,7 +609,7 @@ class ChestDetectorGUI:
     def reset_display(self):
         """Reset display to blank/white screen"""
         self.canvas.delete("all")
-        self.canvas.config(bg="white")
+        self.canvas.config(bg="#292929")
         
         capture_width = self.x2 - self.x1
         capture_height = self.y2 - self.y1
