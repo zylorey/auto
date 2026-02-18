@@ -7,8 +7,8 @@ import pyautogui
 import pyperclip
 import threading
 import time
-import keyboard  # For global hotkeys
-from pynput import mouse  # For mouse scrolling
+import keyboard
+from pynput import mouse
 from mss import mss
 import pywinstyles
 import sv_ttk
@@ -360,12 +360,15 @@ class ChestDetectorGUI:
         self.threshold = 20
         self.refresh_rate = 500
         self.book_check_interval = 250
+        self.paper_match_threshold = 0.6
         
         # Variables
         self.is_monitoring = False
         self.monitor_thread = None
         self.book_detection_thread = None
         self.book_template = None
+        self.paper_template = None
+        self.paper_template_gray = None
         
         # Debug counter
         self.debug_counter = 0
@@ -376,6 +379,7 @@ class ChestDetectorGUI:
         
         # Load templates
         self.load_book_template()
+        self.load_paper_template()   # <-- NEW: load paper template on startup
         
         self.setup_ui()
         
@@ -393,7 +397,85 @@ class ChestDetectorGUI:
         except Exception as e:
             print(f"❌ Error loading book.png: {e}")
             self.book_template = None
-    
+
+    def load_paper_template(self):
+        """Load the paper.png template for empty slot detection"""
+        try:
+            self.paper_template = cv2.imread('paper.png', cv2.IMREAD_UNCHANGED)
+            if self.paper_template is None:
+                print("⚠️ WARNING: paper.png not found. Place paper.png in the same directory.")
+                print("   Paper detection will fall back to intensity-based method.")
+            else:
+                print(f"✅ Paper template loaded! Size: {self.paper_template.shape}")
+
+                # Convert BGRA -> BGR if alpha channel present
+                if len(self.paper_template.shape) == 3 and self.paper_template.shape[2] == 4:
+                    self.paper_template = cv2.cvtColor(self.paper_template, cv2.COLOR_BGRA2BGR)
+                    print("   Converted from BGRA to BGR")
+
+                # Pre-compute grayscale version for faster matching
+                self.paper_template_gray = cv2.cvtColor(self.paper_template, cv2.COLOR_BGR2GRAY)
+                print(f"   Grayscale template ready: {self.paper_template_gray.shape}")
+
+        except Exception as e:
+            print(f"❌ Error loading paper.png: {e}")
+            self.paper_template = None
+            self.paper_template_gray = None
+
+    def detect_paper_in_slot(self, slot_roi, slot_index):
+        """
+        Detect if paper.png is present in a slot using multi-scale template matching.
+        Returns (is_paper: bool, confidence: float)
+        """
+        if self.paper_template is None or self.paper_template_gray is None or slot_roi.size == 0:
+            return False, 0.0
+
+        try:
+            template_h, template_w = self.paper_template.shape[:2]
+
+            # Skip slots that are far too small relative to the template
+            if slot_roi.shape[0] < template_h * 0.5 or slot_roi.shape[1] < template_w * 0.5:
+                return False, 0.0
+
+            slot_gray = cv2.cvtColor(slot_roi, cv2.COLOR_BGR2GRAY)
+
+            # Try multiple scales to handle different slot sizes
+            scales = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
+            max_confidence = 0.0
+            best_scale = 0.0
+
+            for scale in scales:
+                width  = int(self.paper_template_gray.shape[1] * scale)
+                height = int(self.paper_template_gray.shape[0] * scale)
+
+                # Skip if scaled template won't fit in the slot
+                if width > slot_gray.shape[1] or height > slot_gray.shape[0]:
+                    continue
+                if width < 5 or height < 5:
+                    continue
+
+                scaled_template = cv2.resize(self.paper_template_gray, (width, height))
+
+                result = cv2.matchTemplate(slot_gray, scaled_template, cv2.TM_CCOEFF_NORMED)
+                _, max_val, _, _ = cv2.minMaxLoc(result)
+
+                if max_val > max_confidence:
+                    max_confidence = max_val
+                    best_scale = scale
+
+            # Periodic debug output for first 3 slots
+            self.debug_counter += 1
+            if self.debug_counter % 30 == 0 and slot_index < 3:
+                print(f"Slot {slot_index}: paper confidence={max_confidence:.3f}, best_scale={best_scale:.2f}, size={slot_roi.shape}")
+
+            is_paper = max_confidence >= self.paper_match_threshold
+            return is_paper, max_confidence
+
+        except Exception as e:
+            if self.debug_counter % 100 == 0:
+                print(f"Paper detection error in slot {slot_index}: {e}")
+            return False, 0.0
+
     def setup_ui(self):
         # Main container
         main_frame = ttk.Frame(self.window, padding="2")
@@ -568,23 +650,43 @@ class ChestDetectorGUI:
             
             empty_count = 0
             filled_count = 0
-            
+            paper_detected_count = 0
+
             for i, (x, y, w, h) in enumerate(slots[:27]):
                 slot_roi = img[y:y+h, x:x+w]
                 
                 if slot_roi.size == 0:
                     continue
-                
-                std_intensity = np.std(slot_roi)
-                is_empty = std_intensity < threshold
-                
-                if is_empty:
+
+                # --- NEW: First try paper template matching ---
+                has_paper, confidence = self.detect_paper_in_slot(slot_roi, i)
+
+                if has_paper:
+                    # Paper found → empty slot
                     empty_count += 1
+                    paper_detected_count += 1
                     cv2.rectangle(output, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                    # Annotate with "P" + confidence percentage
+                    label = f"P{int(confidence * 100)}"
+                    cv2.putText(output, label, (x + 2, y + 12),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 0), 1)
                 else:
-                    filled_count += 1
-                    cv2.rectangle(output, (x, y), (x+w, y+h), (0, 0, 255), 2)
-            
+                    # Fall back to intensity-based detection
+                    std_intensity = np.std(slot_roi)
+                    is_empty = std_intensity < threshold
+                
+                    if is_empty:
+                        empty_count += 1
+                        cv2.rectangle(output, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                    else:
+                        filled_count += 1
+                        cv2.rectangle(output, (x, y), (x+w, y+h), (0, 0, 255), 2)
+
+            # Periodic debug summary
+            if self.debug_counter % 60 == 0:
+                print(f"📊 Detection: {paper_detected_count} papers found, "
+                      f"{empty_count} empty, {filled_count} filled")
+
             return empty_count, filled_count, output
             
         except Exception as e:
@@ -599,6 +701,8 @@ class ChestDetectorGUI:
             self.monitor_thread = threading.Thread(target=self.monitoring_loop, daemon=True)
             self.monitor_thread.start()
             print("🟢 Monitoring started!")
+            if self.paper_template is None:
+                print("⚠️  Paper template not loaded — falling back to intensity detection only")
     
     def stop_monitoring(self):
         """Stop live monitoring"""
@@ -1352,3 +1456,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
