@@ -34,36 +34,70 @@ MANROPE_TTF_B64 = 'AAEAAAAPAIAAAwBwR1BPU3EucYgAAEZIAAA1YkdTVUKYP7EkAAAf0AAAD05PU
 MAX_ITEMS_PER_ORDER_SEQUENCE = 9
 
 _USER32 = ctypes.windll.user32
+_KERNEL32 = ctypes.windll.kernel32
 _SW_MAXIMIZE = 3
+GWL_STYLE = -16
+WS_MAXIMIZE_BIT = 0x01000000
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+MINECRAFT_PROCESSES = {"javaw.exe", "minecraft.exe", "minecraftlauncher.exe"}
+
+WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+
+
+def get_process_name(hwnd):
+    pid = ctypes.wintypes.DWORD()
+    _USER32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    handle = _KERNEL32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
+    if not handle:
+        return ""
+    buf = ctypes.create_unicode_buffer(512)
+    size = ctypes.wintypes.DWORD(512)
+    if _KERNEL32.QueryFullProcessImageNameW(handle, 0, buf, ctypes.byref(size)):
+        _KERNEL32.CloseHandle(handle)
+        return buf.value.split("\\")[-1].lower()
+    _KERNEL32.CloseHandle(handle)
+    return ""
+
+
+def is_maximized(hwnd):
+    return bool(_USER32.GetWindowLongW(hwnd, GWL_STYLE) & WS_MAXIMIZE_BIT)
 
 
 def maximize_minecraft_window():
     """
-    Maximize the first visible top-level window whose title looks like the Java game
-    (contains 'Minecraft', excludes 'Launcher'). Returns True if a window was maximized.
+    Maximize the first visible top-level Minecraft window by process name.
+    Returns True if a window was found and maximized.
     """
     found = []
 
     def _enum_proc(hwnd, _lparam):
         if not _USER32.IsWindowVisible(hwnd):
             return True
-        length = _USER32.GetWindowTextLengthW(hwnd)
-        if length <= 0:
-            return True
-        buf = ctypes.create_unicode_buffer(length + 1)
-        _USER32.GetWindowTextW(hwnd, buf, length + 1)
-        title = buf.value
-        if "Minecraft" in title and "Launcher" not in title:
-            found.append(hwnd)
-            return False
+        proc = get_process_name(hwnd)
+        if proc in MINECRAFT_PROCESSES:
+            buf = ctypes.create_unicode_buffer(512)
+            _USER32.GetWindowTextW(hwnd, buf, 512)
+            title = buf.value.strip()
+            if title:
+                found.append((hwnd, title, proc))
         return True
 
-    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
-    cb = WNDENUMPROC(_enum_proc)
-    _USER32.EnumWindows(cb, 0)
+    _USER32.EnumWindows(WNDENUMPROC(_enum_proc), 0)
     if not found:
         return False
-    _USER32.ShowWindow(found[0], _SW_MAXIMIZE)
+
+    for hwnd, title, proc in found:
+        if is_maximized(hwnd):
+            print(f'[{proc}] "{title}" sudah maximized.')
+        else:
+            print(f'[{proc}] "{title}" belum maximized, sedang di-maximize...')
+            _USER32.ShowWindow(hwnd, _SW_MAXIMIZE)
+            _USER32.SetForegroundWindow(hwnd)
+            time.sleep(0.3)
+            if is_maximized(hwnd):
+                print("Berhasil di-maximize!")
+            else:
+                print("Gagal maximize (coba jalankan ulang).")
     return True
 
 
@@ -764,6 +798,11 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(0, self._defocus_price_input)
 
+        self._maximize_running = True
+        maximize_minecraft_window()
+        self._maximize_thread = threading.Thread(target=self._maximize_loop, daemon=True)
+        self._maximize_thread.start()
+
     def _defocus_price_input(self):
         self.price_input.clearFocus()
         self.order_input.clearFocus()
@@ -911,7 +950,7 @@ class MainWindow(QMainWindow):
         )
         header_row.addWidget(self.price_label)
         self.price_input = ScrollPresetField(
-            [100, 110, 120, 130, 140, 145, 149, 150],
+            [100, 104, 105, 109, 110, 114, 115, 109, 120, 124, 125, 129, 130, 135, 139, 140, 145, 148, 149, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200],
             default=149,
         )
         header_row.addWidget(self.price_input)
@@ -1148,7 +1187,16 @@ class MainWindow(QMainWindow):
                 self.chest_img_label.setText("Scanning.")
                 self._chest_scanning_text = True
 
+    def _maximize_loop(self):
+        while self._maximize_running:
+            try:
+                maximize_minecraft_window()
+            except Exception:
+                pass
+            time.sleep(2)
+
     def _cleanup_background(self):
+        self._maximize_running = False
         self.hotbar_running = False
         self._book_loop_running = False
         self.chest_monitoring = False
